@@ -1,3 +1,9 @@
+/**
+ * MRB
+ * @flow
+ * @format
+ */
+
 import React, {
   useCallback,
   useState,
@@ -5,7 +11,6 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { StatusBar } from "expo-status-bar";
 import {
   StyleSheet,
   Text,
@@ -14,38 +19,59 @@ import {
   Platform,
   Pressable,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
-// import { fs, get_per } from "../fs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-//bottomsheet
 import BottomSheet, { BottomSheetFlatList } from "@gorhom/bottom-sheet";
-
-// expo fs
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
+import WebView from "react-native-webview";
+import {
+  WebViewNoScript,
+  WebViewScript_Intersect,
+  // WebViewScript_Intersect,
+  WebViewScript_Mutation,
+} from "../html_js";
 
-export function get_per(Callback) {
-  MediaLibrary.getPermissionsAsync()
-    .then(async (Per) => {
-      console.log("dir M: " + Per.granted);
+type StarterType = {
+  Callback: any;
+  start: boolean;
+};
 
-      if (Per.granted) {
-        // show startEr
-        Callback(true);
-      } else {
-        MediaLibrary.requestPermissionsAsync()
-          .then(async (Req) => {
-            console.log("req: " + Req.granted);
-          })
-          .catch((e) => console.log(e));
-      }
-    })
-    .catch((e) => console.log(e));
+// global
+const nameFolder_Albums: string = "KK";
+const copyAlbums: boolean = false;
+const defaultWeb: string = `https://google.com`;
+
+/* MediaLibrary And FileSystem */
+
+// check permissions
+function get_per(Callback) {
+  try {
+    MediaLibrary.getPermissionsAsync()
+      .then(async (Per) => {
+        console.log("dir M: " + Per.granted);
+
+        if (Per.granted) {
+          // show startEr
+          Callback(true); // قبول شده
+        } else {
+          MediaLibrary.requestPermissionsAsync()
+            .then(async (Req) => {
+              // قبول کرد
+              console.log("req: " + Req.granted);
+            })
+            .catch((e) => console.log(e));
+        }
+      })
+      .catch((e) => console.log(e));
+  } catch (error) {
+    alert("Error");
+  }
 }
 
 // download image
-export async function fs(url: string, filename: string) {
+async function fs(url: string, filename: string) {
   try {
     const result = await FileSystem.downloadAsync(
       url,
@@ -67,12 +93,17 @@ async function save(uri: string) {
   if (Platform.OS === "android") {
     try {
       const asset = await MediaLibrary.createAssetAsync(uri);
-      const album = await MediaLibrary.getAlbumAsync("KK");
+      const album = await MediaLibrary.getAlbumAsync(nameFolder_Albums);
+
       if (album == null) {
-        await MediaLibrary.createAlbumAsync("KK", asset, false);
+        await MediaLibrary.createAlbumAsync(
+          nameFolder_Albums,
+          asset,
+          copyAlbums
+        );
         console.log("new album, uri: " + asset.uri);
       } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
         console.log("save to album, locationNames: " + album.locationNames);
       }
     } catch (error) {
@@ -83,17 +114,7 @@ async function save(uri: string) {
   }
 }
 
-//
-// import { WebViewComponent } from "../WebView/index";
-// import BottomSheet_Popup from "../Popup_Modal";
-
-type StarterType = {
-  Callback: any;
-  start: boolean;
-};
-
-export function BottomSheet_Popup({ Callback, start }: StarterType) {
-  // console.log(start)
+function BottomSheet_Popup({ Callback, start }: StarterType) {
   return (
     <View
       style={{
@@ -134,16 +155,12 @@ export function BottomSheet_Popup({ Callback, start }: StarterType) {
 }
 
 // webview
-import WebView from "react-native-webview";
-import {
-  WebViewNoScript,
-  // WebViewScript_Intersect,
-  WebViewScript_Mutation,
-} from "../html_js";
-export const WebViewComponent = ({ start }) => {
+const WebViewComponent = ({ start }) => {
+  const [scriptType, setScriptType] = useState<number>(1);
   const ScriptManager = (function () {
     if (start) {
-      return WebViewScript_Mutation;
+      if (scriptType === 1) return WebViewScript_Mutation;
+      else return WebViewScript_Intersect;
     }
     return WebViewNoScript;
   })();
@@ -151,7 +168,7 @@ export const WebViewComponent = ({ start }) => {
   return (
     <WebView
       source={{
-        uri: `https://google.com`,
+        uri: defaultWeb,
       }}
       automaticallyAdjustContentInsets={false}
       scrollEnabled={false}
@@ -164,23 +181,15 @@ export const WebViewComponent = ({ start }) => {
       javaScriptEnabled={true}
       injectedJavaScript={ScriptManager}
       domStorageEnabled={true}
-      style={{ width: "100%", height: "100%" }}
+      style={styles.WebView}
     />
   );
 };
 
-// import BottomSheet from "../BottomSheet";
-function WebView_C({ start }) {
-  return <WebViewComponent start={start} />;
-}
-
-//
-// import App from "../";
-
+// App
 export default function (): React.JSX.Element {
   const [showStarter, setShowStarter] = useState<boolean>(false);
   // const [todos, setTodos] = useState<[]>([]);
-
   const [showModal, setShowModal] = useState<boolean>(true);
   const [start, setStart] = useState<boolean>(false);
 
@@ -190,7 +199,6 @@ export default function (): React.JSX.Element {
   const changheModal = useCallback(() => {
     setShowModal((f) => !f);
   }, [showModal]);
-
   const changheShowStarter = useCallback(
     (val: boolean) => {
       console.log("granted and : " + val);
@@ -254,7 +262,7 @@ export default function (): React.JSX.Element {
           <>
             <>
               <BottomSheet_Popup start={start} Callback={changheStart} />
-              <WebView_C start={start} />
+              <WebViewComponent start={start} />
             </>
             <View style={styles.container}>
               {/* <Button title="Snap To 90%" onPress={() => handleSnapPress(2)} /> */}
@@ -294,7 +302,6 @@ const styles = StyleSheet.create({
   },
 
   // bottomsheet
-
   bottomsheet_contentContainer: {
     backgroundColor: "white",
   },
@@ -302,5 +309,13 @@ const styles = StyleSheet.create({
     padding: 6,
     margin: 6,
     backgroundColor: "#eee",
+  },
+
+  // WebView
+  WebView: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#fff",
   },
 });
