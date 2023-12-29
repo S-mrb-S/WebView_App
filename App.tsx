@@ -1,8 +1,6 @@
 // imported
-import App from "./src/compressed"
+import App from './src/compressed';
 
-export default function(){
-  return (
-    <App />
-  )
+export default function () {
+  return <App />;
 }

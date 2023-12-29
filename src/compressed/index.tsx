@@ -4,34 +4,22 @@
  * @format
  */
 
-import React, {
-  useCallback,
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-} from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Button,
-  Platform,
-  Pressable,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import BottomSheet, { BottomSheetFlatList } from "@gorhom/bottom-sheet";
-import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library";
-import WebView from "react-native-webview";
+import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import { StyleSheet, Text, View, Button, Platform, Pressable } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import WebView from 'react-native-webview';
+
 import {
   WebViewNoScript,
   WebViewScript_Intersect,
   // WebViewScript_Intersect,
   WebViewScript_Mutation,
-} from "../html_js";
+} from '../html_js';
 
 type StarterType = {
   Callback: any;
@@ -39,7 +27,7 @@ type StarterType = {
 };
 
 // global
-const nameFolder_Albums: string = "KK";
+const nameFolder_Albums: string = 'KK';
 const copyAlbums: boolean = false;
 const defaultWeb: string = `https://google.com`;
 
@@ -49,68 +37,61 @@ const defaultWeb: string = `https://google.com`;
 function get_per(Callback) {
   try {
     MediaLibrary.getPermissionsAsync()
-      .then(async (Per) => {
-        console.log("dir M: " + Per.granted);
+      .then(async Per => {
+        console.log('dir M: ' + Per.granted);
 
         if (Per.granted) {
           // show startEr
           Callback(true); // قبول شده
         } else {
           MediaLibrary.requestPermissionsAsync()
-            .then(async (Req) => {
+            .then(async Req => {
               // قبول کرد
-              console.log("req: " + Req.granted);
+              console.log('req: ' + Req.granted);
             })
-            .catch((e) => console.log(e));
+            .catch(e => console.log(e));
         }
       })
-      .catch((e) => console.log(e));
+      .catch(e => console.log(e));
   } catch (error) {
-    alert("Error");
+    alert('Error');
   }
 }
 
 // download image
 async function fs(url: string, filename: string) {
   try {
-    const result = await FileSystem.downloadAsync(
-      url,
-      FileSystem.documentDirectory + filename
-    );
+    const result = await FileSystem.downloadAsync(url, FileSystem.documentDirectory + filename);
 
     if (result.status != 200) {
-      alert("Error when downloading: 200");
+      alert('Error when downloading: 200');
     }
 
     save(result.uri);
   } catch (e) {
-    alert("[fs] Error: " + e);
+    alert('[fs] Error: ' + e);
   }
 }
 
 //save album
 async function save(uri: string) {
-  if (Platform.OS === "android") {
+  if (Platform.OS === 'android') {
     try {
       const asset = await MediaLibrary.createAssetAsync(uri);
       const album = await MediaLibrary.getAlbumAsync(nameFolder_Albums);
 
       if (album == null) {
-        await MediaLibrary.createAlbumAsync(
-          nameFolder_Albums,
-          asset,
-          copyAlbums
-        );
-        console.log("new album, uri: " + asset.uri);
+        await MediaLibrary.createAlbumAsync(nameFolder_Albums, asset, copyAlbums);
+        console.log('new album, uri: ' + asset.uri);
       } else {
         await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
-        console.log("save to album, locationNames: " + album.locationNames);
+        console.log('save to album, locationNames: ' + album.locationNames);
       }
     } catch (error) {
-      alert("[save] Error: " + error);
+      alert('[save] Error: ' + error);
     }
   } else {
-    alert("just android, " + uri);
+    alert('just android, ' + uri);
   }
 }
 
@@ -120,16 +101,16 @@ function BottomSheet_Popup({ Callback, start }: StarterType) {
       style={{
         height: 60,
         width: 60,
-        backgroundColor: start ? "green" : "grey",
+        backgroundColor: start ? 'green' : 'grey',
         borderRadius: 1000,
         borderTopEndRadius: 0,
-        position: "absolute",
-        justifyContent: "center",
-        alignItems: "center",
-        right: "5%",
-        top: "10%",
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        right: '5%',
+        top: '10%',
 
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: {
           width: 0,
           height: 1,
@@ -137,16 +118,14 @@ function BottomSheet_Popup({ Callback, start }: StarterType) {
         shadowOpacity: 0.22,
         shadowRadius: 2.22,
         elevation: 3,
-      }}
-    >
+      }}>
       <Pressable onPress={Callback}>
         <Text
           style={{
-            color: start ? "yellow" : "#999",
+            color: start ? 'yellow' : '#999',
             fontSize: 12,
-            fontWeight: "bold",
-          }}
-        >
+            fontWeight: 'bold',
+          }}>
           Setting
         </Text>
       </Pressable>
@@ -172,15 +151,15 @@ const WebViewComponent = ({ start }) => {
       }}
       automaticallyAdjustContentInsets={false}
       scrollEnabled={false}
-      onMessage={(event) => {
+      onMessage={event => {
         // do something with `event.nativeEvent.data`
-        if (event.nativeEvent.data != "") {
-          console.log("You have message: `" + event.nativeEvent.data + "`");
+        if (event.nativeEvent.data != '') {
+          console.log('You have message: `' + event.nativeEvent.data + '`');
         }
       }}
-      javaScriptEnabled={true}
+      javaScriptEnabled
       injectedJavaScript={ScriptManager}
-      domStorageEnabled={true}
+      domStorageEnabled
       style={styles.WebView}
     />
   );
@@ -194,21 +173,21 @@ export default function (): React.JSX.Element {
   const [start, setStart] = useState<boolean>(false);
 
   const changheStart = useCallback(() => {
-    setStart((f) => !f);
+    setStart(f => !f);
   }, [start]);
   const changheModal = useCallback(() => {
-    setShowModal((f) => !f);
+    setShowModal(f => !f);
   }, [showModal]);
   const changheShowStarter = useCallback(
     (val: boolean) => {
-      console.log("granted and : " + val);
+      console.log('granted and : ' + val);
       setShowStarter(val);
     },
     [showStarter]
   );
 
   if (showStarter) {
-    console.log("starter true!");
+    console.log('starter true!');
     // fs(
     //   "https://s.pinimg.com/webapp/HubBanner_mWeb_Beauty-199b84c2.png",
     //   "1.png"
@@ -231,13 +210,13 @@ export default function (): React.JSX.Element {
         .map((_, index) => `index-${index}`),
     []
   );
-  const snapPoints = useMemo(() => ["25%", "50%", "90%"], []);
+  const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
 
   // callbacks
-  const handleSheetChange = useCallback((index) => {
-    console.log("handleSheetChange", index);
+  const handleSheetChange = useCallback(index => {
+    console.log('handleSheetChange', index);
   }, []);
-  const handleSnapPress = useCallback((index) => {
+  const handleSnapPress = useCallback(index => {
     sheetRef.current?.snapToIndex(index);
   }, []);
   const handleClosePress = useCallback(() => {
@@ -269,14 +248,10 @@ export default function (): React.JSX.Element {
               <Button title="Snap To 50%" onPress={() => handleSnapPress(1)} />
               {/* <Button title="Snap To 25%" onPress={() => handleSnapPress(0)} /> */}
               {/* <Button title="Close" onPress={() => handleClosePress()} /> */}
-              <BottomSheet
-                ref={sheetRef}
-                snapPoints={snapPoints}
-                onChange={handleSheetChange}
-              >
+              <BottomSheet ref={sheetRef} snapPoints={snapPoints} onChange={handleSheetChange}>
                 <BottomSheetFlatList
                   data={data}
-                  keyExtractor={(i) => i}
+                  keyExtractor={i => i}
                   renderItem={renderItem}
                   contentContainerStyle={styles.contentContainer}
                 />
@@ -294,28 +269,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   background: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   contentContainer: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
 
   // bottomsheet
   bottomsheet_contentContainer: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   itemContainer: {
     padding: 6,
     margin: 6,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
   },
 
   // WebView
   WebView: {
     flex: 1,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#fff",
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#fff',
   },
 });

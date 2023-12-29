@@ -1,9 +1,7 @@
 module.exports = {
   root: true,
-  extends: '@react-native',
-  plugins: ['prettier'],
+  extends: ['universe/native'],
   rules: {
-    'prettier/prettier': 'error',
-    endOfLine: 'auto',
+    endOfLine: 0,
   },
 };
