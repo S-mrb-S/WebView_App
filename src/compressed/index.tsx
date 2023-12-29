@@ -54,7 +54,7 @@ function get_per(Callback) {
       })
       .catch(e => console.log(e));
   } catch (error) {
-    alert('Error');
+    alert('Error: ' + error);
   }
 }
 
@@ -168,15 +168,22 @@ const WebViewComponent = ({ start }) => {
 // App
 export default function (): React.JSX.Element {
   const [showStarter, setShowStarter] = useState<boolean>(false);
-  // const [todos, setTodos] = useState<[]>([]);
-  const [showModal, setShowModal] = useState<boolean>(true);
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [start, setStart] = useState<boolean>(false);
+  console.log('modal: ' + showModal);
 
-  const changheStart = useCallback(() => {
-    setStart(f => !f);
-  }, [start]);
-  const changheModal = useCallback(() => {
-    setShowModal(f => !f);
+  const changheBottomSheet = useCallback(() => {
+    if (showModal) {
+      console.log('close');
+
+      handleClosePress();
+      setShowModal(false);
+    } else {
+      console.log('open');
+
+      handleSnapPress(2);
+      setShowModal(true);
+    }
   }, [showModal]);
   const changheShowStarter = useCallback(
     (val: boolean) => {
@@ -213,9 +220,6 @@ export default function (): React.JSX.Element {
   const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
 
   // callbacks
-  const handleSheetChange = useCallback(index => {
-    console.log('handleSheetChange', index);
-  }, []);
   const handleSnapPress = useCallback(index => {
     sheetRef.current?.snapToIndex(index);
   }, []);
@@ -238,33 +242,24 @@ export default function (): React.JSX.Element {
       <View style={[styles.container, styles.background]}>
         <StatusBar style="auto" animated translucent />
         <SafeAreaView style={styles.container}>
-          <>
-            <>
-              <BottomSheet_Popup start={start} Callback={changheStart} />
-              <WebViewComponent start={start} />
-            </>
-            <View style={styles.container}>
-              {/* <Button title="Snap To 90%" onPress={() => handleSnapPress(2)} /> */}
-              <Button title="Snap To 50%" onPress={() => handleSnapPress(1)} />
-              {/* <Button title="Snap To 25%" onPress={() => handleSnapPress(0)} /> */}
-              {/* <Button title="Close" onPress={() => handleClosePress()} /> */}
-              <BottomSheet ref={sheetRef} snapPoints={snapPoints} onChange={handleSheetChange}>
-                <BottomSheetFlatList
-                  data={data}
-                  keyExtractor={i => i}
-                  renderItem={renderItem}
-                  contentContainerStyle={styles.contentContainer}
-                />
-              </BottomSheet>
-            </View>
-          </>
+          <WebViewComponent start={start} />
+          <BottomSheet_Popup start={start} Callback={changheBottomSheet} />
         </SafeAreaView>
+        <BottomSheet ref={sheetRef} snapPoints={snapPoints}>
+          <BottomSheetFlatList
+            data={data}
+            keyExtractor={i => i}
+            renderItem={renderItem}
+            contentContainerStyle={styles.bottomsheet_contentContainer}
+          />
+        </BottomSheet>
       </View>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  // App
   container: {
     flex: 1,
   },

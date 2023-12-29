@@ -138,6 +138,6 @@ true;
 export const WebViewNoScript = `
 setTimeout(function () {
   window.ReactNativeWebView.postMessage("No script");
-}, 1000);
+}, 500);
 true; // note: this is required, or you'll sometimes get silent failures
 `;
