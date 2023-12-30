@@ -87,8 +87,12 @@ async function save(uri: string) {
         await MediaLibrary.createAlbumAsync(nameFolder_Albums, asset, copyAlbums);
         console.log('new album, uri: ' + asset.uri);
       } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
-        console.log('save to album, locationNames: ' + album.locationNames);
+        const albumC = await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
+        if (albumC) {
+          console.log('save to album, locationNames: ' + album.locationNames);
+        } else {
+          console.log('album doesnt save');
+        }
       }
     } catch (error) {
       alert('[save] Error: ' + error);
@@ -218,34 +222,47 @@ const BottomSheetScreen = () => {
 /* Handle WebView message and url */
 //========================================================
 // Filename
-function CreateTime() {
-  return Date.now();
-}
-function Handle_urls(data: string) {
-  const arrayRef = useRef(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5']);
+function Handle_urls(data: string[], newData: string) {
+  const linkRegex = /https?:\/\/[^\s]+/g; // الگوی یک لینک
+  //                                +g ^
 
-  const addNewItem = newItem => {
-    const currentArray = arrayRef.current.slice(); // کپی از آرایه فعلی
-    currentArray.push(newItem); // اضافه کردن مقدار جدید
-    arrayRef.current = currentArray; // تنظیم مقدار جدید useRef
-  };
 
-  const printAndRemoveFirstItem = () => {
-    if (arrayRef.current.length > 0) {
-      const firstItem = arrayRef.current[0];
-      console.log(firstItem);
-      arrayRef.current.shift();
-    } else {
-      console.log('dont have string in array');
+  // function getImgSrc() {
+  //   var imgElements = document.getElementsByTagName('img');
+  //   var imgSrcList = [];
+  //   for (var i = 0; i < imgElements.length; i++) {
+  //     // بررسی دامنه لینک عکس
+  //     if (imgElements[i].src.includes('example.com')) {
+  //       imgSrcList.push(imgElements[i].src);
+  //     }
+  //   }
+  //   return imgSrcList;
+  // }
+  
+  // // استفاده از تابع برای دریافت لینک‌های عکس
+  // var imageSources = getImgSrc();
+  // console.log(imageSources);
+
+
+  if (newData.match(linkRegex)) {
+    if (newData.match(/\.(jpeg|jpg|png)$/)) {
+      return true;
     }
-  };
-
+    // else if (link.match(/\.(mp4|avi|mov)$/)) {
+    //   return 'Video'; // لینک یک ویدئو است
+    // }
+    else {
+      return false;
+    }
+  } else {
+    return false;
+  }
 }
 //========================================================
 /* WebView */
 //========================================================
 // WebView screen
-const WebViewComponent = ({ start }) => {
+const WebViewComponent = ({ start, arrayHandler_Add }) => {
   const [scriptType, setScriptType] = useState<number>(1);
   const ScriptManager = (function () {
     if (start) {
@@ -263,11 +280,7 @@ const WebViewComponent = ({ start }) => {
       automaticallyAdjustContentInsets={false}
       scrollEnabled={false}
       onMessage={event => {
-        // do something with `event.nativeEvent.data`
-        if (event.nativeEvent.data !== '') {
-          // console.log('You have message: `' + event.nativeEvent.data + '`');
-          // Handle_urls(event.nativeEvent.data);
-        }
+        if (event.nativeEvent.data !== '') arrayHandler_Add(event.nativeEvent.data);
       }}
       javaScriptEnabled
       injectedJavaScript={ScriptManager}
@@ -277,12 +290,51 @@ const WebViewComponent = ({ start }) => {
   );
 };
 // SafeAreaView for WebView
-const Screen = () => {
-  const [start, setStart] = useState<boolean>(false);
+const Screen = ({ granted }) => {
+  const [start, setStart] = useState<boolean>(true); //false
+  const arrayRef = useRef<string[]>([]);
+  console.log('items: ' + arrayRef.current);
 
+  const arrayHandler_Add = useCallback((newItem: string) => {
+    if (Handle_urls(arrayRef.current, newItem)) arrayRef.current = [...arrayRef.current, newItem];
+  }, []);
+
+  // const arrayHandler_Rmv = useCallback(newItem => {
+  const printAndRemoveFirstItem = () => {
+    if (arrayRef.current.length > 0) {
+      const firstItem = arrayRef.current[0];
+      if (firstItem !== null) {
+        arrayRef.current.shift();
+        return firstItem;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  };
+  // }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const checkPP = printAndRemoveFirstItem();
+      if (checkPP !== false) {
+        fs(checkPP, Date.now() + '.png');
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!granted)
+    return (
+      <View>
+        <Text>No permissions</Text>
+      </View>
+    );
   return (
     <SafeAreaView style={styles.container}>
-      <WebViewComponent start={start} />
+      <WebViewComponent start={start} arrayHandler_Add={arrayHandler_Add} />
     </SafeAreaView>
   );
 };
@@ -312,23 +364,14 @@ export default function (): React.JSX.Element {
     [granted]
   );
 
-  // if (granted) {
-  //   console.log('starter true!');
-  //   // fs(
-  //   //   "https://s.pinimg.com/webapp/HubBanner_mWeb_Beauty-199b84c2.png",
-  //   //   "1.png"
-  //   // );
-  // }
-
   useEffect(() => {
     send_per(setShowCallback);
-    // Handle_urls("1")
   }, []);
 
   return (
     <SafeAreaProvider>
       <RootView>
-        <Screen />
+        <Screen granted={granted} />
         <BottomSheetScreen />
       </RootView>
     </SafeAreaProvider>
