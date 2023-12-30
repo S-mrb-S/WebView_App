@@ -14,7 +14,7 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, Text, View, Platform, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Platform } from 'react-native';
 import { GestureHandlerRootView, RectButton } from 'react-native-gesture-handler';
 import Animated, { Extrapolate, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { toRad } from 'react-native-redash';
@@ -65,42 +65,54 @@ function get_per(setShowCallback) {
     })
     .catch(e => console.log(e));
 }
+// Send
+async function send_per(setShowCallback) {
+  console.log('check per res: ' + (await check_per()));
+  if (!(await check_per())) {
+    get_per(setShowCallback);
+    console.log('per false! get_per() called');
+  }
+}
+//========================================================
+// Media and download
+//========================================================
+// Create and save album (pic)
+async function save(uri: string) {
+  if (Platform.OS === 'android') {
+    try {
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      const album = await MediaLibrary.getAlbumAsync(nameFolder_Albums);
+
+      if (album == null) {
+        await MediaLibrary.createAlbumAsync(nameFolder_Albums, asset, copyAlbums);
+        console.log('new album, uri: ' + asset.uri);
+      } else {
+        await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
+        console.log('save to album, locationNames: ' + album.locationNames);
+      }
+    } catch (error) {
+      alert('[save] Error: ' + error);
+    }
+  } else {
+    alert('just android, ' + uri);
+  }
+}
 // Download image
 async function fs(url: string, filename: string) {
-  //save album
-  async function save(uri: string) {
-    if (Platform.OS === 'android') {
-      try {
-        const asset = await MediaLibrary.createAssetAsync(uri);
-        const album = await MediaLibrary.getAlbumAsync(nameFolder_Albums);
-
-        if (album == null) {
-          await MediaLibrary.createAlbumAsync(nameFolder_Albums, asset, copyAlbums);
-          console.log('new album, uri: ' + asset.uri);
-        } else {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, copyAlbums);
-          console.log('save to album, locationNames: ' + album.locationNames);
-        }
-      } catch (error) {
-        alert('[save] Error: ' + error);
-      }
-    } else {
-      alert('just android, ' + uri);
-    }
-  }
   try {
     const result = await FileSystem.downloadAsync(url, FileSystem.documentDirectory + filename);
-
     if (result.status !== 200) {
       alert('Error when downloading: 200');
     }
-
     save(result.uri);
   } catch (e) {
     alert('[fs] Error: ' + e);
   }
 }
-
+//========================================================
+/* BottomSheet And Animation */
+//========================================================
+// Footer for BottomSheet
 const CustomFooter = ({ animatedFooterPosition }: CustomFooterProps) => {
   //#region hooks
   // we need the bottom safe insets to avoid bottom notches.
@@ -162,7 +174,7 @@ const CustomFooter = ({ animatedFooterPosition }: CustomFooterProps) => {
     </BottomSheetFooter>
   );
 };
-
+// BottomSheet
 const BottomSheetScreen = () => {
   const snapPoints = useMemo(() => positionBottomSheet, []);
   const sheetRef = useRef<BottomSheet>(null);
@@ -202,8 +214,37 @@ const BottomSheetScreen = () => {
     </BottomSheet>
   );
 };
+//========================================================
+/* Handle WebView message and url */
+//========================================================
+// Filename
+function CreateTime() {
+  return Date.now();
+}
+function Handle_urls(data: string) {
+  const arrayRef = useRef(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5']);
 
-// webview
+  const addNewItem = newItem => {
+    const currentArray = arrayRef.current.slice(); // کپی از آرایه فعلی
+    currentArray.push(newItem); // اضافه کردن مقدار جدید
+    arrayRef.current = currentArray; // تنظیم مقدار جدید useRef
+  };
+
+  const printAndRemoveFirstItem = () => {
+    if (arrayRef.current.length > 0) {
+      const firstItem = arrayRef.current[0];
+      console.log(firstItem);
+      arrayRef.current.shift();
+    } else {
+      console.log('dont have string in array');
+    }
+  };
+
+}
+//========================================================
+/* WebView */
+//========================================================
+// WebView screen
 const WebViewComponent = ({ start }) => {
   const [scriptType, setScriptType] = useState<number>(1);
   const ScriptManager = (function () {
@@ -223,8 +264,9 @@ const WebViewComponent = ({ start }) => {
       scrollEnabled={false}
       onMessage={event => {
         // do something with `event.nativeEvent.data`
-        if (event.nativeEvent.data != '') {
-          console.log('You have message: `' + event.nativeEvent.data + '`');
+        if (event.nativeEvent.data !== '') {
+          // console.log('You have message: `' + event.nativeEvent.data + '`');
+          // Handle_urls(event.nativeEvent.data);
         }
       }}
       javaScriptEnabled
@@ -234,6 +276,7 @@ const WebViewComponent = ({ start }) => {
     />
   );
 };
+// SafeAreaView for WebView
 const Screen = () => {
   const [start, setStart] = useState<boolean>(false);
 
@@ -243,7 +286,10 @@ const Screen = () => {
     </SafeAreaView>
   );
 };
-
+//========================================================
+/* App */
+//========================================================
+// Handler
 const RootView = ({ children }) => {
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -254,15 +300,6 @@ const RootView = ({ children }) => {
     </GestureHandlerRootView>
   );
 };
-
-async function send_per(setShowCallback) {
-  console.log('check per res: ' + (await check_per()));
-  if (!(await check_per())) {
-    get_per(setShowCallback);
-    console.log('per false! get_per() called');
-  }
-}
-
 // App
 export default function (): React.JSX.Element {
   const [granted, setGranted] = useState<boolean>(true);
@@ -285,6 +322,7 @@ export default function (): React.JSX.Element {
 
   useEffect(() => {
     send_per(setShowCallback);
+    // Handle_urls("1")
   }, []);
 
   return (
