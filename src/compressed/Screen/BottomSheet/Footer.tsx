@@ -5,7 +5,7 @@ import Animated, { Extrapolate, interpolate, useAnimatedStyle } from 'react-nati
 import { toRad } from 'react-native-redash';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { styles } from './Styles';
+import { styles } from '../Styles';
 //========================================================
 const AnimatedRectButton = Animated.createAnimatedComponent(RectButton);
 //========================================================

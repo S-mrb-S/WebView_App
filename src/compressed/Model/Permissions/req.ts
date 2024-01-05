@@ -4,27 +4,34 @@ import { check_per } from './check';
 
 /**
  * Request
- * @param setShowCallback Callback (boolean)
+ * @returns boolean
  */
-export function get_per(setShowCallback: (e: boolean) => void) {
-  requestPermissionsAsync()
-    .then(async Req => {
-      if (!Req.granted) {
-        alert('reject'); // rejected
-        setShowCallback(false);
-      }
-    })
-    .catch(e => console.log(e));
+async function get_per(): Promise<boolean> {
+  try {
+    const Req = await requestPermissionsAsync();
+    // جواب مجوز ارسال را بفرستید
+    return Req.granted;
+  } catch (e) {
+    console.log(e);
+    // مشکلی هست
+    return false;
+  }
 }
 
 /**
- * Send
- * @param setShowCallback Callback (boolean)
+ * Send (check)
+ * @returns boolean
  */
-export async function send_per(setShowCallback: (e: boolean) => void) {
-  //   console.log('check per res: ' + (await check_per()));
-  if (!(await check_per())) {
-    get_per(setShowCallback);
-    // console.log('per false! get_per() called');
+export async function send_per(): Promise<boolean> {
+  const ss = await check_per(); // چک کننده
+  // اگر مجوز نداشتید درخواست بدید
+  if (!ss) {
+    // مجوز ندارید و منتظر پاسخ درخواست ارسالی باشید
+    const aa = await get_per();
+    // جواب درخواست را ارسال کنید
+    return aa;
+  } else {
+    // مجوز دارید
+    return true;
   }
 }

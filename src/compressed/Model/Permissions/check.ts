@@ -14,5 +14,6 @@ export async function check_per(): Promise<boolean> {
     return per.granted;
   } catch (error) {
     alert('Error: ' + error);
+    return false;
   }
 }

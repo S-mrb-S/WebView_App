@@ -4,43 +4,44 @@
  * @format
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useRef } from 'react';
 
+//========================================================
+/* Screens And Component */
+//========================================================
 import { send_per } from './Model/Permissions/req';
 import BottomSheet from './Screen/BottomSheet';
-import BottomSheetFooter from './Screen/BottomSheetFooter';
+import BottomSheetFooter from './Screen/BottomSheet/Footer';
 import RootView from './Screen/RootView';
-import WebViewComponent from './Screen/WebViewComponent';
-import WebViewScreen from './Screen/WebViewScreen';
+import WebViewScreen from './Screen/WebView';
+import WebViewComponent from './Screen/WebView/WebViewComponent';
 
-//========================================================
-/* App */
-//========================================================
+/**
+ * App
+ * @returns React.JSX.Element
+ */
 export default function (): React.JSX.Element {
-  const [granted, setGranted] = useState<boolean>(true);
-  const [start, setStart] = useState<boolean>(true); //false
-  console.log('Starter show: ' + granted);
+  const arrayRef = useRef<string[]>([]); // لیست لینک های دریافت شده از وب
+  const [granted, setGranted] = useState<boolean>(true); // دسترسی برای ذخیره و دانلود
+  const [start, setStart] = useState<boolean>(false); // شروع کننده کد های جاوااسکریپت
+  const [scriptType, setScriptType] = useState<number>(1); // 0 | 1 | 2 | number   // نوع اسکریپت اجرایی
 
-  const setShowCallback = useCallback(
-    (e: boolean) => {
-      setGranted(e);
-    },
-    [granted]
-  );
+  async function req() {
+    const ru = await send_per();
+    if (!ru) setGranted(ru); // مجوز رد شده و صفحه بسته میشود
+    // console.log('this is ru: ' + ru); // مجوز دارید و لاگ بگیرید
+  }
 
   useEffect(() => {
-    send_per(setShowCallback);
+    req(); // مجوز لازم دارید
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <RootView>
-        <WebViewScreen granted={granted}>
-          <WebViewComponent start={start} />
-        </WebViewScreen>
-        <BottomSheet CustomFooter={BottomSheetFooter} />
-      </RootView>
-    </SafeAreaProvider>
+    <RootView>
+      <WebViewScreen granted={granted}>
+        <WebViewComponent start={start} arrayRef={arrayRef} scriptType={scriptType} />
+      </WebViewScreen>
+      <BottomSheet CustomFooter={BottomSheetFooter} />
+    </RootView>
   );
 }

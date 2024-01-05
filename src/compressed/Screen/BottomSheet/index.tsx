@@ -2,8 +2,8 @@ import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import React, { useMemo, useCallback, useRef } from 'react';
 import { View, Text } from 'react-native';
 
-import { styles } from './Styles';
-import { positionBottomSheet } from '../Public';
+import { positionBottomSheet } from '../../Public';
+import { styles } from '../Styles';
 
 // BottomSheet
 export default function ({ CustomFooter }) {
